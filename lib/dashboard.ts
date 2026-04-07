@@ -21,6 +21,7 @@ export function getDashboardState() {
       { title: "Expand", description: "Spot white space, competitor moves, and launch gaps to support onboarding and growth planning." }
     ],
     notes: report.notes,
-    freshness: report.freshness
+    freshness: report.freshness,
+    adapterModes: report.adapterModes
   };
 }

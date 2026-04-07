@@ -95,6 +95,14 @@ export default function Page() {
             {state.notes.map((note) => (
               <p key={note}>{note}</p>
             ))}
+            <div className="adapter-modes">
+              {state.adapterModes.map((adapter) => (
+                <div key={adapter.name} className="adapter-mode">
+                  <span>{adapter.name}</span>
+                  <strong>{adapter.mode === "mcp" ? "MCP ready" : "Local mock"}</strong>
+                </div>
+              ))}
+            </div>
           </div>
         </Section>
       </div>

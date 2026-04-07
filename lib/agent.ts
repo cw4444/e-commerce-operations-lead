@@ -1,4 +1,5 @@
-import { getConnectorRegistry } from "@/lib/connectors";
+import { asNumber, asString, type ConnectorRecord, type ConnectorSnapshot } from "@/lib/connectors";
+import { getMcpFriendlyAdapters } from "@/lib/adapters";
 import type { Insight, Marketplace, Metric } from "@/lib/dashboard";
 
 export type Task = { title: string; detail: string; owner: string; due: string };
@@ -10,6 +11,7 @@ export type ScanReport = {
   tasks: Task[];
   notes: string[];
   freshness: Array<{ source: string; freshness: string }>;
+  adapterModes: Array<{ name: string; mode: string }>;
 };
 
 function scoreMarketplace(name: string, revenue: number, conversion: number, reviewRating: number) {
@@ -17,16 +19,48 @@ function scoreMarketplace(name: string, revenue: number, conversion: number, rev
   return name.includes("Amazon") ? Math.min(100, base) : Math.min(100, base + 3);
 }
 
-export function runAgentScan(): ScanReport {
-  const [sales, reviews, competitors, inbox] = getConnectorRegistry();
-  const salesSnapshot = sales.read();
-  const reviewSnapshot = reviews.read();
-  const competitorSnapshot = competitors.read();
-  const inboxSnapshot = inbox.read();
+function recordAt(snapshot: ConnectorSnapshot, index: number) {
+  return (snapshot.records[index] ?? {}) as ConnectorRecord;
+}
 
-  const primarySales = salesSnapshot.records[0] as Record<string, string | number>;
-  const secondarySales = salesSnapshot.records[1] as Record<string, string | number>;
-  const reviewOne = reviewSnapshot.records[0] as Record<string, string | number>;
+export function runAgentScan(): ScanReport {
+  const [slack, gmail, notion] = getMcpFriendlyAdapters();
+  const slackSnapshot = slack.read();
+  const gmailSnapshot = gmail.read();
+  const notionSnapshot = notion.read();
+  const salesSnapshot: ConnectorSnapshot = {
+    source: "amazon-sp-api",
+    freshness: "5m ago",
+    mode: "mock",
+    records: [
+      { sku: "HERO-001", revenue: 48200, conversion: 0.046, sessions: 10230 },
+      { sku: "HERO-014", revenue: 39120, conversion: 0.039, sessions: 9340 }
+    ]
+  };
+  const reviewsSnapshot: ConnectorSnapshot = {
+    source: "reviews-aggregator",
+    freshness: "12m ago",
+    mode: "mock",
+    records: [
+      { sku: "HERO-001", rating: 4.2, mentions: 18, topic: "packaging" },
+      { sku: "HERO-014", rating: 4.4, mentions: 9, topic: "product quality" }
+    ]
+  };
+  const competitorsSnapshot: ConnectorSnapshot = {
+    source: "marketwatch",
+    freshness: "1h ago",
+    mode: "mock",
+    records: [
+      { brand: "Competitor A", move: "bundle launch", price_delta: -7, white_space: 1 },
+      { brand: "Competitor B", move: "review push", price_delta: 0, white_space: 2 }
+    ]
+  };
+
+  const inboxSnapshot = slackSnapshot;
+
+  const primarySales = recordAt(salesSnapshot, 0);
+  const secondarySales = recordAt(salesSnapshot, 1);
+  const reviewOne = recordAt(reviewsSnapshot, 0);
 
   const metrics: Metric[] = [
     { label: "Revenue", value: "£184k", delta: "+12.4%", tone: "good" },
@@ -39,33 +73,33 @@ export function runAgentScan(): ScanReport {
     {
       name: "Amazon UK",
       status: "Needs attention",
-      score: scoreMarketplace("Amazon UK", Number(primarySales.revenue), Number(primarySales.conversion), Number(reviewOne.rating)),
+      score: scoreMarketplace("Amazon UK", asNumber(primarySales.revenue), asNumber(primarySales.conversion), asNumber(reviewOne.rating)),
       note: "A+ content outdated on 6 hero SKUs."
     },
     {
       name: "Amazon EU",
       status: "Healthy",
-      score: scoreMarketplace("Amazon EU", Number(secondarySales.revenue), Number(secondarySales.conversion), Number(reviewOne.rating) + 0.1),
+      score: scoreMarketplace("Amazon EU", asNumber(secondarySales.revenue), asNumber(secondarySales.conversion), asNumber(reviewOne.rating) + 0.1),
       note: "Pricing sits inside target band."
     },
     {
       name: "Marketplaces",
       status: "Watchlist",
       score: 82,
-      note: `${competitorSnapshot.records.length} competitor moves detected in the last cycle.`
+      note: `${competitorsSnapshot.records.length} competitor moves detected in the last cycle.`
     }
   ];
 
   const insights: Insight[] = [
     {
       title: "Two top listings are leaking conversion",
-      summary: `Traffic is stable, but mobile conversion dropped on ${String(primarySales.sku)} and ${String(secondarySales.sku)} after image order changes and a missing comparison chart.`,
+      summary: `Traffic is stable, but mobile conversion dropped on ${asString(primarySales.sku)} and ${asString(secondarySales.sku)} after image order changes and a missing comparison chart.`,
       action: "Queue a creative audit and draft a revised image set for design approval.",
       severity: "high"
     },
     {
       title: "Review drift is early but real",
-      summary: `Recent reviews for ${String(reviewOne.sku)} mention ${String(reviewOne.topic)} more often than last month.`,
+      summary: `Recent reviews for ${asString(reviewOne.sku)} mention ${asString(reviewOne.topic)} more often than last month.`,
       action: "Open a support ticket and notify ops with the SKU list plus example review excerpts.",
       severity: "medium"
     },
@@ -78,8 +112,8 @@ export function runAgentScan(): ScanReport {
   ];
 
   const tasks: Task[] = inboxSnapshot.records.map((item) => {
-    const thread = String(item.thread);
-    const owner = String(item.owner);
+    const thread = asString(item.thread);
+    const owner = asString(item.owner);
     return {
       title: thread === "listing suppression" ? "Escalate listing suppression" : "Reply to damaged unit claims",
       detail: thread === "listing suppression" ? "Drafted ASIN list and causes for marketplace support." : "Drafted response with customer-ready language.",
@@ -98,6 +132,7 @@ export function runAgentScan(): ScanReport {
       "Escalation paths mapped to the owning team.",
       "Competitor and review signals folded into one watchlist."
     ],
-    freshness: [salesSnapshot, reviewSnapshot, competitorSnapshot, inboxSnapshot].map(({ source, freshness }) => ({ source, freshness }))
+    freshness: [salesSnapshot, reviewsSnapshot, competitorsSnapshot, inboxSnapshot, gmailSnapshot, notionSnapshot].map(({ source, freshness }) => ({ source, freshness })),
+    adapterModes: [slack, gmail, notion].map((adapter) => ({ name: adapter.name, mode: adapter.read().mode }))
   };
 }
