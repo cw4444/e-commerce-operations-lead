@@ -22,6 +22,18 @@ npm run dev
 
 The current build uses a simulated dashboard state so the experience is immediate in an empty repo. The `lib/` layer is intentionally small so real connectors can be added for Amazon, retail media, review tools, Slack, email, or internal APIs without rewriting the UI.
 
+## MCP-friendly adapters
+
+Signal Forge ships with mock adapters for Slack, Gmail, and Notion so the demo runs without any external accounts.
+
+If you do have MCP-enabled access later, you can switch each adapter on with environment flags:
+
+- `ENABLE_SLACK_MCP=true`
+- `ENABLE_GMAIL_MCP=true`
+- `ENABLE_NOTION_MCP=true`
+
+When a flag is enabled, the corresponding adapter reports `MCP ready` instead of `Local mock`. The app is designed so the UI and agent flow stay the same either way.
+
 ## License
 
 MIT

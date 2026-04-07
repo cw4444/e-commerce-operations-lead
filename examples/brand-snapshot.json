@@ -1,0 +1,41 @@
+{
+  "brand": "Northstar Home",
+  "marketplaces": [
+    {
+      "name": "Amazon UK",
+      "revenue": 48200,
+      "conversion": 0.046,
+      "reviewScore": 4.2,
+      "health": "needs_attention"
+    },
+    {
+      "name": "Amazon EU",
+      "revenue": 39120,
+      "conversion": 0.039,
+      "reviewScore": 4.4,
+      "health": "healthy"
+    }
+  ],
+  "competitors": [
+    {
+      "name": "Competitor A",
+      "move": "bundle launch",
+      "priceDelta": -7
+    },
+    {
+      "name": "Competitor B",
+      "move": "review push",
+      "priceDelta": 0
+    }
+  ],
+  "followUps": [
+    {
+      "team": "Brand",
+      "task": "refresh hero image pack"
+    },
+    {
+      "team": "Ops",
+      "task": "escalate listing suppression"
+    }
+  ]
+}

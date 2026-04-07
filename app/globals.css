@@ -18,6 +18,27 @@ html, body { margin: 0; min-height: 100%; background: radial-gradient(circle at 
 body { min-height: 100vh; }
 a { color: inherit; text-decoration: none; }
 
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(18px);
+  background: rgba(5, 11, 18, 0.55);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.topbar-inner {
+  width: min(1200px, calc(100% - 32px));
+  margin: 0 auto;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.topbar-brand { font-weight: 700; letter-spacing: 0.04em; }
+.topbar-nav { display: flex; gap: 18px; color: var(--muted); }
+.topbar-nav a:hover, .topbar-brand:hover { color: var(--text); }
+
 .shell {
   width: min(1200px, calc(100% - 32px));
   margin: 0 auto;
@@ -127,10 +148,52 @@ a { color: inherit; text-decoration: none; }
 }
 .adapter-mode span { color: var(--muted); }
 
+.settings-hero {
+  padding: 32px 0 8px;
+}
+.settings-hero h1 {
+  margin: 0 0 16px;
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  line-height: 0.96;
+  max-width: 12ch;
+}
+.settings-list, .settings-notes { display: grid; gap: 12px; }
+.settings-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.settings-item:last-child { border-bottom: 0; padding-bottom: 0; }
+.settings-item p { margin: 0 0 8px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.02em; }
+.settings-item span { color: var(--muted); }
+.flag-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  border: 1px solid var(--line);
+}
+.flag-on { color: var(--accent); background: rgba(139, 233, 199, 0.12); }
+.flag-off { color: var(--muted); background: rgba(255,255,255,0.04); }
+.settings-notes p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.settings-notes code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+
 @media (max-width: 960px) {
   .hero, .grid-two, .metric-rail, .capabilities { grid-template-columns: 1fr; }
   .hero { min-height: auto; }
   .hero-panel { min-height: 320px; }
   .insight, .market-row, .todo-item { flex-direction: column; }
   .insight strong, .todo-item strong { text-align: left; }
+  .settings-item, .topbar-inner { flex-direction: column; align-items: flex-start; }
 }
